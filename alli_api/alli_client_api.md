@@ -44,7 +44,12 @@ GraphQL is implemented over standard HTTP and websocket. So you can choose any h
 # Start Conversation  
 gql = """  
 mutation startConversation($v_placement:String!, $v_debug:Boolean) {  
- startConversation(placement: $v_placement, debug:$v_debug) { conversation { id } debug }}  
+  startConversation(placement: $v_placement, debug:$v_debug) { 
+    conversation { 
+      id 
+    } debug 
+  }
+}  
 """  
   
 variables = {  
