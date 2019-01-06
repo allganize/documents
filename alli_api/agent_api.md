@@ -1,4 +1,4 @@
-# Agent API Document
+# Agent API Documentation
 
 
 ## Signup and setting campaign
@@ -15,11 +15,216 @@ GraphQL is implemented over standard HTTP and websocket. So you can choose any h
 -   Python websocket library : [https://pypi.org/project/websocket-client/](https://pypi.org/project/websocket-client/)
 
 ## Endpoints
-- GRAPHQL_ENDPOINT: [https://backend.alli.ai/d/user/](https://backend.alli.ai/d/graphql/)
+- GRAPHQL_ENDPOINT: [https://backend.alli.ai/d/graphql/](https://backend.alli.ai/d/graphql/)
 
-## Agent API with python example
+## Conversation list API Tutorial with GraphiQL
+
+### Prerequisite
+1.  Download :
+Please download Graphiql from [here](https://github.com/graphql/graphiql)
+
+1. Set the Endpoint to [https://backend.alli.ai/d/graphql/](https://backend.alli.ai/d/graphql/)
+
+![](images/end_point.png)
+
+1. You need get a token to access to the conversation list. You can get the token through the login mutation.
+```
+mutation m {
+  login(email: "YOUR_EMAIL", password: "YOUR_PASSWORD") {
+    token
+  }
+}
+```
+1. Please put the token in HTTP header after clicking "Edit HTTP Headers" button. Header name is AUTHORIZATION and put the token in header value.
+
+![](images/http_header.png)
+
+### Getting the conversations list
+1. Retrieve conversations list by the following query.
+
+![](images/conversations.png)
+
+```
+query getConversations {
+  conversations(filter: {}, first: 5) {
+    edges {
+      node {
+        id
+        campaign {
+          id
+        }
+        user {
+          ownUserId
+        }
+        chats {
+          edges {
+            node {
+              ... on UserChat {
+                message
+              }
+              ... on AgentChat {
+                message
+                agent {
+                  name
+                }
+              }
+              ... on BotChat {
+                message
+                createdAt
+                chatOptions
+              }
+              __typename
+            }
+          }
+        }
+      }
+    }
+  }
+}
+```
+
+1. If you want to get more fields you can simply add field name in the query.
+Re: all the available field names and types, you can check it in the schema section.
+
+![](images/campaign_types.png)
+
+For example, if you want to get more fields, such as name and description of the campaign in each conversation, you can simply put them in the query.
+
+```
+query getConversations {
+  conversations(filter: {}, first: 5) {
+    edges {
+      node {
+        id
+        campaign {
+          id
+          name
+          description
+        }
+        user {
+          ownUserId
+        }
+        chats {
+          edges {
+            node {
+              ... on UserChat {
+                message
+              }
+              ... on AgentChat {
+                message
+                agent {
+                  name
+                }
+              }
+              ... on BotChat {
+                message
+                createdAt
+                chatOptions
+              }
+              __typename
+            }
+          }
+        }
+      }
+    }
+  }
+}
+```
+
+1. Retrieving conversations query takes the following parameters.
+To see the detailed type specification of each parameters, please take a look at the schema documentation in GraphiQL.
+
+![](images/documentation.png)
+
+ - filter
+    - filter takes the following 6 parameters
+        - campaignIds: list of campaign ids
+        - userIds: list of user ids
+        - state: one of the following ENUMs
+            - INIT
+            - END_OF_CHATBOT
+            - END_BY_AGENT
+            - END_BY_USER
+            - WAIT_AGENT
+            - WAIT_USER_ANSWER
+            - WAIT_USER_ANSWER_2
+            - INTERRUPTED
+        - startAt_Gte: greater than the start date
+        - endAt_Gte: lower than the end date
+        - searchTerm: user's first name or last name
+ - order: one of the following self explanatory ENUMs
+    - CREATED_AT_ASC
+    - CREATED_AT_DESC
+    - MODIFIED_AT_ASC
+    - MODIFIED_AT_DESC
+    - LAST_CHAT_TIME_ASC
+    - LAST_CHAT_TIME_DESC
+    - CAMPAIGN_NAME_ASC
+    - CAMPAIGN_NAME_DESC
+ - before: ID for pagination. The result will only contain items before the id.
+ - after: ID for pagination. The result will only contain items after the id.
+ - first: int. The number of items from the beginning of the result.
+ - last: int. The number of items from the end of the result.
+
+1. Query with the parameters.
+
+- Retrieving the conversations list for the specific campaign.
+You can get the campaign id from the url.
+https://www.alli.ai/campaigns/CAMPAIGN_ID
+
+For example, if you want to get the 3 conversations with the following conditions:
+- the campaign id is Q2FtcGFpZ246NWI5MzBjNGRmOWNhY2MwMjI4MGQ5OWY3
+- the user's name is Pocoyo
+
+The query would look like
+```
+query getConversations {
+  conversations(filter: {searchTerm: "Pocoyo", campaignIds: ["Q2FtcGFpZ246NWI5MzBjNGRmOWNhY2MwMjI4MGQ5OWY3"]}, first: 3) {
+    edges {
+      node {
+        id
+        campaign {
+          id
+        }
+        user {
+          id
+          firstName
+          ownUserId
+        }
+        chats {
+          edges {
+            node {
+              ... on UserChat {
+                message
+              }
+              ... on AgentChat {
+                message
+                agent {
+                  name
+                }
+              }
+              ... on BotChat {
+                message
+                createdAt
+                chatOptions
+              }
+              __typename
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+```
+
+![](images/query_with_params.png)
+
+## Agent API with Python example
 You can get api lists and arguments, fields using graphiql tool. Please see graphiql's Document section.
 ![](images/graphiql_document.png)
+
 ### Full example
 - Please see example https://github.com/allganize/documents/blob/master/alli_api/agent_api_example.py
 
